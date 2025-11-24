@@ -4,6 +4,7 @@ from rich.console import Console
 from rich.table import Table
 from binance.enums import SIDE_BUY, SIDE_SELL
 
+from app.services.logger import setup_logger
 from app.services.trade_service import TradeService
 from app.core.config import settings
 
@@ -18,6 +19,8 @@ class State:
         self.testnet: bool = True
         self.api_key: str = ""
         self.secret_key: str = ""
+        self.verbose: bool = False
+        self.logger = None
 
 
 state = State()
@@ -33,6 +36,9 @@ def main_callback(
         envvar="API_KEY",
         help="Binance API Key (or set BINANCE_API_KEY env var)",
     ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose logging output"
+    ),
     secret_key: str | None = typer.Option(
         None,
         envvar="SECRET_KEY",
@@ -44,9 +50,13 @@ def main_callback(
 
     Configure your API credentials via options or environment variables.
     """
+
     state.testnet = testnet
     state.api_key = api_key or settings.API_KEY
+    state.verbose = verbose
     state.secret_key = secret_key or settings.SECRET_KEY
+
+    state.logger = setup_logger(verbose=False)
 
     if not state.api_key or not state.secret_key:
         console.print("[red]Error: API credentials not configured[/red]")
@@ -76,7 +86,10 @@ def market_order(
 
     async def execute():
         async with TradeService(
-            testnet=state.testnet, api_key=state.api_key, secret_key=state.secret_key
+            logger=state.logger,
+            testnet=state.testnet,
+            api_key=state.api_key,
+            secret_key=state.secret_key,
         ) as service:
             order = await service.place_futures_market_order(
                 symbol=symbol.upper(), side=side.upper(), quantity=quantity
@@ -103,7 +116,10 @@ def limit_order(
 
     async def execute():
         async with TradeService(
-            testnet=state.testnet, api_key=state.api_key, secret_key=state.secret_key
+            logger=state.logger,
+            testnet=state.testnet,
+            api_key=state.api_key,
+            secret_key=state.secret_key,
         ) as service:
             order = await service.place_futures_limit_order(
                 symbol=symbol.upper(), side=side.upper(), quantity=quantity, price=price
@@ -131,7 +147,10 @@ def stop_limit_order(
 
     async def execute():
         async with TradeService(
-            testnet=state.testnet, api_key=state.api_key, secret_key=state.secret_key
+            logger=state.logger,
+            testnet=state.testnet,
+            api_key=state.api_key,
+            secret_key=state.secret_key,
         ) as service:
             order = await service.place_stop_limit_order(
                 symbol=symbol.upper(),
@@ -159,7 +178,10 @@ def get_price(
 
     async def execute():
         async with TradeService(
-            testnet=state.testnet, api_key=state.api_key, secret_key=state.secret_key
+            logger=state.logger,
+            testnet=state.testnet,
+            api_key=state.api_key,
+            secret_key=state.secret_key,
         ) as service:
             price = await service.get_current_price(symbol.upper())
             console.print(
@@ -179,7 +201,10 @@ def get_balance():
 
     async def execute():
         async with TradeService(
-            testnet=state.testnet, api_key=state.api_key, secret_key=state.secret_key
+            logger=state.logger,
+            testnet=state.testnet,
+            api_key=state.api_key,
+            secret_key=state.secret_key,
         ) as service:
             balance = await service.get_account_balance()
             console.print(
@@ -201,7 +226,10 @@ def list_orders(
 
     async def execute():
         async with TradeService(
-            testnet=state.testnet, api_key=state.api_key, secret_key=state.secret_key
+            logger=state.logger,
+            testnet=state.testnet,
+            api_key=state.api_key,
+            secret_key=state.secret_key,
         ) as service:
             orders = await service.get_open_orders(
                 symbol=symbol.upper() if symbol else None
@@ -246,7 +274,10 @@ def get_position(
 
     async def execute():
         async with TradeService(
-            testnet=state.testnet, api_key=state.api_key, secret_key=state.secret_key
+            logger=state.logger,
+            testnet=state.testnet,
+            api_key=state.api_key,
+            secret_key=state.secret_key,
         ) as service:
             positions = await service.get_position_info(
                 symbol=symbol.upper() if symbol else None
@@ -298,7 +329,10 @@ def cancel_order(
 
     async def execute():
         async with TradeService(
-            testnet=state.testnet, api_key=state.api_key, secret_key=state.secret_key
+            logger=state.logger,
+            testnet=state.testnet,
+            api_key=state.api_key,
+            secret_key=state.secret_key,
         ) as service:
             result = await service.cancel_order(symbol.upper(), order_id)
             console.print(f"\n[green]✓ Order {order_id} canceled successfully[/green]")

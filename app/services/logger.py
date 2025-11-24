@@ -2,15 +2,16 @@ from loguru import logger
 import sys
 
 
-def setup_logger():
+def setup_logger(verbose: bool = False):
     logger.remove()
 
-    logger.add(
-        sys.stdout,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-        level="INFO",
-        colorize=True,
-    )
+    if verbose:
+        logger.add(
+            sys.stdout,
+            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+            level="INFO",
+            colorize=True,
+        )
 
     logger.add(
         "logs/bot_{time:YYYY-MM-DD}.log",
@@ -41,6 +42,3 @@ def setup_logger():
 
     logger.info("Logger initialized successfully")
     return logger
-
-
-logger = setup_logger()

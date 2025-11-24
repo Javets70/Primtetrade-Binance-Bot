@@ -8,18 +8,20 @@ from binance.enums import (
     ORDER_TYPE_STOP_LOSS_LIMIT,
 )
 import binance
+# from loguru import Logger
 
 from app.core.config import settings
-from app.services.logger import logger
 
 
 class TradeService:
     def __init__(
         self,
+        logger,
         testnet: bool = settings.TESTNET,
         api_key: str = settings.API_KEY,
         secret_key: str = settings.SECRET_KEY,
     ):
+        self.logger = logger
         self.testnet: bool = testnet
         self.api_key: str = api_key
         self.secret_key: str = secret_key
@@ -30,15 +32,15 @@ class TradeService:
             self.client = await AsyncClient.create(
                 self.api_key, self.secret_key, testnet=True
             )
-            logger.info("Connected to Binance Futures TESTNET")
+            self.logger.info("Connected to Binance Futures TESTNET")
         else:
             self.client = await AsyncClient.create(self.api_key, self.secret_key)
-            logger.warning("Connected to REAL Binance Futures - USE WITH CAUTION")
+            self.logger.warning("Connected to REAL Binance Futures - USE WITH CAUTION")
         return self
 
-    async def __aexit__(self):
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.client.close_connection()
-        logger.info("Connection Closed")
+        self.logger.info("Connection Closed")
 
     async def place_futures_market_order(self, symbol: str, side: str, quantity: float):
         """
@@ -56,7 +58,7 @@ class TradeService:
             if side not in [SIDE_BUY, SIDE_SELL]:
                 raise ValueError(f"Invalid SIDE: {side}. Must be 'BUY' or 'SELL'")
 
-            logger.info(f"Placing MARKET {side} order: {quantity} {symbol}")
+            self.logger.info(f"Placing MARKET {side} order: {quantity} {symbol}")
 
             order = await self.client.futures_create_order(
                 symbol=symbol,
@@ -65,7 +67,7 @@ class TradeService:
                 quantity=quantity,
             )
 
-            logger.bind(trade=True).info(
+            self.logger.bind(trade=True).info(
                 f"MARKET {side} | {symbol} | Qty: {quantity} | "
                 f"Order ID: {order['orderId']} | Status: {order['status']}"
             )
@@ -73,7 +75,7 @@ class TradeService:
             return order
 
         except Exception as e:
-            logger.error(f"Market order failed: {e}")
+            self.logger.error(f"Market order failed: {e}")
             raise
 
     async def place_futures_limit_order(
@@ -95,7 +97,9 @@ class TradeService:
             if side not in [SIDE_BUY, SIDE_SELL]:
                 raise ValueError(f"Invalid SIDE: {side}. Must be 'BUY' or 'SELL'")
 
-            logger.info(f"Placing LIMIT {side} order: {quantity} {symbol} at {price}")
+            self.logger.info(
+                f"Placing LIMIT {side} order: {quantity} {symbol} at {price}"
+            )
             order = await self.client.futures_create_order(
                 symbol=symbol,
                 side=side,
@@ -105,7 +109,7 @@ class TradeService:
                 price=price,
             )
 
-            logger.bind(trade=True).info(
+            self.logger.bind(trade=True).info(
                 f"LIMIT {side} | {symbol} | Qty: {quantity} | Price: ${price} | "
                 f"Order ID: {order['orderId']} | Status: {order['status']}"
             )
@@ -113,7 +117,7 @@ class TradeService:
             return order
 
         except Exception as e:
-            logger.error(f"Limit order failed: {e}")
+            self.logger.error(f"Limit order failed: {e}")
             raise
 
     async def place_stop_limit_order(
@@ -136,7 +140,7 @@ class TradeService:
             if side not in [SIDE_BUY, SIDE_SELL]:
                 raise ValueError(f"Invalid SIDE: {side}. Must be 'BUY' or 'SELL'")
 
-            logger.info(
+            self.logger.info(
                 f"Placing STOP_LIMIT {side} order: {quantity} {symbol} at {price} and stop price at {stop_price}"
             )
 
@@ -149,7 +153,7 @@ class TradeService:
                 stopPrice=stop_price,
             )
 
-            logger.bind(trade=True).info(
+            self.logger.bind(trade=True).info(
                 f"STOP_LIMIT {side} | {symbol} | Qty: {quantity} | "
                 f"Price: {price} | Stop Price : {stop_price}"
                 f"Order ID: {order['orderId']} | Status: {order['status']}"
@@ -158,7 +162,7 @@ class TradeService:
             return order
 
         except Exception as e:
-            logger.error(f"Market order failed: {e}")
+            self.logger.error(f"Market order failed: {e}")
             raise
 
     async def get_current_price(self, symbol):
@@ -166,10 +170,10 @@ class TradeService:
         try:
             ticker = await self.client.futures_symbol_ticker(symbol=symbol)
             price = float(ticker["price"])
-            logger.info(f"Current price for {symbol}: ${price}")
+            self.logger.info(f"Current price for {symbol}: ${price}")
             return price
         except Exception as e:
-            logger.error(f"Failed to get price: {e}")
+            self.logger.error(f"Failed to get price: {e}")
             raise
 
     async def get_account_balance(self):
@@ -177,10 +181,10 @@ class TradeService:
         try:
             account = await self.client.futures_account()
             balance = float(account["totalWalletBalance"])
-            logger.info(f"Account balance: ${balance:.2f} USDT")
+            self.logger.info(f"Account balance: ${balance:.2f} USDT")
             return balance
         except Exception as e:
-            logger.error(f"Failed to get balance: {e}")
+            self.logger.error(f"Failed to get balance: {e}")
             raise
 
     async def cancel_order(self, symbol, order_id):
@@ -189,30 +193,30 @@ class TradeService:
             result = await self.client.futures_cancel_order(
                 symbol=symbol, orderId=order_id
             )
-            logger.info(f"Order {order_id} canceled successfully")
+            self.logger.info(f"Order {order_id} canceled successfully")
             return result
         except Exception as e:
-            logger.error(f"Failed to cancel order: {e}")
+            self.logger.error(f"Failed to cancel order: {e}")
             raise
 
     async def get_open_orders(self, symbol=None):
         """Get all open orders"""
         try:
             orders = await self.client.futures_get_open_orders(symbol=symbol)
-            logger.info(f"Found {len(orders)} open orders")
+            self.logger.info(f"Found {len(orders)} open orders")
             return orders
         except Exception as e:
-            logger.error(f"Failed to get open orders: {e}")
+            self.logger.error(f"Failed to get open orders: {e}")
             raise
 
     async def get_position_info(self, symbol=None):
         """Get current position information"""
         try:
             positions = await self.client.futures_position_information(symbol=symbol)
-            logger.info(
+            self.logger.info(
                 f"Position info retrieved for {symbol if symbol else 'all symbols'}"
             )
             return positions
         except Exception as e:
-            logger.error(f"Failed to get position info: {e}")
+            self.logger.error(f"Failed to get position info: {e}")
             raise
