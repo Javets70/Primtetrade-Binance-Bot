@@ -1,0 +1,6 @@
+2025-11-24 09:31:08 | INFO     | app.services.logger:setup_logger:42 - Logger initialized successfully
+2025-11-24 09:32:54 | INFO     | app.services.logger:setup_logger:42 - Logger initialized successfully
+2025-11-24 09:32:59 | INFO     | app.services.logger:setup_logger:42 - Logger initialized successfully
+2025-11-24 09:33:11 | INFO     | app.services.logger:setup_logger:42 - Logger initialized successfully
+2025-11-24 09:33:12 | INFO     | app.services.trade_service:__aenter__:33 - Connected to Binance Futures TESTNET
+2025-11-24 09:33:12 | ERROR    | app.services.trade_service:get_account_balance:183 - Failed to get balance: APIError(code=-2015): Invalid API-key, IP, or permissions for action
