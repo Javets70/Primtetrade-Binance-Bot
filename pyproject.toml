@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "binance-testnet-bot"
 version = "0.1.0"
@@ -9,5 +13,19 @@ dependencies = [
     "pydantic>=2.12.4",
     "pydantic-settings>=2.12.0",
     "python-binance>=1.0.32",
+    "rich>=14.2.0",
     "typer>=0.20.0",
 ]
+
+# This creates the CLI command
+[project.scripts]
+binance-bot = "app.main:app"
+
+# Tell setuptools where to find your packages
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+# Optional: enable editable installs with uv
+[tool.uv]
+package = true
